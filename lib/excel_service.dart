@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:open_file/open_file.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsio;
 import 'package:path_provider/path_provider.dart';
@@ -15,7 +16,9 @@ class ExcelService {
 
   Future<void> createExcelTables() async {
     if (_excelData == null || _excelData.isEmpty) {
-      print('No data available to create events.');
+      if (kDebugMode) {
+        print('No data available to create events.');
+      }
       return;
     }
 
@@ -47,13 +50,19 @@ class ExcelService {
               'Clock_Time': departure,
             });
           } else {
-            print('Non-numeric data found in entry: $entry');
+            if (kDebugMode) {
+              print('Non-numeric data found in entry: $entry');
+            }
           }
         } catch (e) {
-          print('Error parsing values: $e');
+          if (kDebugMode) {
+            print('Error parsing values: $e');
+          }
         }
       } else {
-        print('Missing data in entry: $entry');
+        if (kDebugMode) {
+          print('Missing data in entry: $entry');
+        }
       }
     }
     await saveEventsToExcel();
@@ -69,7 +78,6 @@ class ExcelService {
 
     final workbook = xlsio.Workbook();
     final sheet = workbook.worksheets[0];
-    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ first table');
 
     // Define headers for the simulationData table.
     final headers = [
@@ -85,58 +93,78 @@ class ExcelService {
       'Cust Wait'
     ];
 
-    // Insert headers into the first row.
+    // Style for header cells: yellow background, center alignment, and border
+    final headerStyle = workbook.styles.add('HeaderStyle');
+    headerStyle.backColor = '#FFFF00'; // Yellow color
+    headerStyle.hAlign = xlsio.HAlignType.center;
+    headerStyle.bold = true;
+    headerStyle.borders.all.lineStyle =
+        xlsio.LineStyle.thin; // Border for header cells
+
+    // Style for content cells: center alignment and border
+    final contentStyle = workbook.styles.add('ContentStyle');
+    contentStyle.hAlign = xlsio.HAlignType.center;
+    contentStyle.borders.all.lineStyle =
+        xlsio.LineStyle.thin; // Border for content cells
+
+    // Insert headers into the first row with header style.
     for (int i = 0; i < headers.length; i++) {
-      sheet.getRangeByIndex(1, i + 1).setText(headers[i]);
+      final cell = sheet.getRangeByIndex(1, i + 1);
+      cell.setText(headers[i]);
+      cell.cellStyle = headerStyle; // Apply header style
     }
 
-    // Insert simulationData into the sheet starting from row 2.
+    // Insert simulationData into the sheet starting from row 2 with content style.
     for (int i = 0; i < _excelData!.length; i++) {
-      final row = _excelData[i]; // Use safe access
+      final row = _excelData[i];
       for (int j = 0; j < row.length; j++) {
-        sheet.getRangeByIndex(i + 2, j + 1).setText(row[j].toString());
+        final cell = sheet.getRangeByIndex(i + 2, j + 1);
+        cell.setText(row[j].toString());
+        cell.cellStyle = contentStyle; // Apply content style with borders
       }
     }
 
-    print('============================================ first table');
-
-    // Second Table
-    sheet.getRangeByName('A16').setText('Event_Type');
-    sheet.getRangeByName('B16').setText('Cust_Num');
-    sheet.getRangeByName('C16').setText('Clock_Time');
+    // Second Table with headers
+    sheet.getRangeByName('A9').setText('Event_Type');
+    sheet.getRangeByName('B9').setText('Cust_Num');
+    sheet.getRangeByName('C9').setText('Clock_Time');
+    sheet.getRangeByName('A9:C9').cellStyle =
+        headerStyle; // Apply header style to second table headers
 
     for (int i = 0; i < _events.length; i++) {
       final event = _events[i];
-      sheet.getRangeByName('A${i + 17}').setText(event['Event_Type']);
-      sheet
-          .getRangeByName('B${i + 17}')
-          .setNumber(event['Cust_Num'].toDouble());
-      sheet
-          .getRangeByName('C${i + 17}')
-          .setNumber(event['Clock_Time'].toDouble());
+      final cellA = sheet.getRangeByName('A${i + 10}');
+      cellA.setText(event['Event_Type']);
+      cellA.cellStyle = contentStyle;
+
+      final cellB = sheet.getRangeByName('B${i + 10}');
+      cellB.setNumber(event['Cust_Num'].toDouble());
+      cellB.cellStyle = contentStyle;
+
+      final cellC = sheet.getRangeByName('C${i + 10}');
+      cellC.setNumber(event['Clock_Time'].toDouble());
+      cellC.cellStyle = contentStyle;
     }
 
     // Create chart
     final ChartCollection charts = ChartCollection(sheet);
     final Chart chart = charts.add();
     chart.chartType = ExcelChartType.column;
-    chart.dataRange = sheet.getRangeByName('A16:C${16 + _events.length}');
+    chart.dataRange = sheet.getRangeByName('A9:C${9 + _events.length}');
 
     // Set the position of the chart
-    chart.topRow = 16;
-    chart.bottomRow = 27; // Adjust this as needed
+    chart.topRow = 9;
+    chart.bottomRow = 18; // Adjust this as needed
     chart.leftColumn = 5;
     chart.rightColumn = 16;
 
-    // Set charts to worksheet.
+    // Add charts to worksheet
     sheet.charts = charts;
 
     final List<int> bytes = workbook.saveAsStream();
     workbook.dispose();
 
-    print('============================================ second table');
-
-    // Use the path_provider to get a valid writable path
+    // Save file in application documents directory
     final directory = await getApplicationDocumentsDirectory();
     final savedFile = File('${directory.path}/_events.xlsx');
 
@@ -144,10 +172,13 @@ class ExcelService {
       await savedFile.writeAsBytes(bytes);
       _savedFilePath = savedFile.path;
 
-      print(
-          '############################################# Events saved to Excel at: $_savedFilePath');
+      if (kDebugMode) {
+        print('Events saved to Excel at: $_savedFilePath');
+      }
     } catch (e) {
-      print('Error saving Excel file: $e');
+      if (kDebugMode) {
+        print('Error saving Excel file: $e');
+      }
     }
   }
 
@@ -162,10 +193,14 @@ class ExcelService {
     if (_savedFilePath != null) {
       final result = await OpenFile.open(_savedFilePath);
       if (result.message != 'Done') {
-        print('Failed to open file: ${result.message}');
+        if (kDebugMode) {
+          print('Failed to open file: ${result.message}');
+        }
       }
     } else {
-      print('No file path available to open.');
+      if (kDebugMode) {
+        print('No file path available to open.');
+      }
     }
   }
 
