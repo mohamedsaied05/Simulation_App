@@ -66,7 +66,7 @@ class WelcomeScreen extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                               builder: (context) =>
-                              const ExcelSimulationScreen()),
+                                  const ExcelSimulationScreen()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -90,15 +90,13 @@ class WelcomeScreen extends StatelessWidget {
                   SizedBox(
                     width: 300,
                     child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                       context,
-                      MaterialPageRoute(
-                       builder: (context) =>
-                       const ExcelSimulationScreen_2())
-                      );
-                       },
-
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const ProbabilitySimulationScreen()));
+                      },
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: Colors.teal[700],

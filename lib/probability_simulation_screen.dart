@@ -5,15 +5,15 @@ import 'dart:io';
 import 'dart:math';
 import 'package:simulation_app/excel_service.dart';
 
-class ExcelSimulationScreen_2 extends StatefulWidget {
-  const ExcelSimulationScreen_2({super.key});
+class ProbabilitySimulationScreen extends StatefulWidget {
+  const ProbabilitySimulationScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
   _ExcelSimulationScreenState createState() => _ExcelSimulationScreenState();
 }
 
-class _ExcelSimulationScreenState extends State<ExcelSimulationScreen_2> {
+class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
   List<List<String>> excelData = [];
   List<List<String>> simulationData = [];
   bool isExcelLoaded = false;
