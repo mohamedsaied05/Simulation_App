@@ -9,23 +9,23 @@ class ProbabilitySimulationScreen extends StatefulWidget {
   const ProbabilitySimulationScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _ExcelSimulationScreenState createState() => _ExcelSimulationScreenState();
 }
 
 class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
   List<List<String>> excelData = [];
-  List<List<String>> simulationData = [];
+  List<List<String>> analysisData = [];
+  List<List<String>> newSimulationData = [];
   bool isExcelLoaded = false;
   bool isExcelGenerated = false;
-  bool isExporting = false; // Loading state variable
+  bool isExporting = false;
   String? _filePath = '';
   late ExcelService service;
 
   @override
   void initState() {
     super.initState();
-    service = ExcelService(_filePath, simulationData);
+    service = ExcelService(_filePath, newSimulationData);
   }
 
   Future<void> pickAndReadExcelFile() async {
@@ -36,7 +36,7 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
       );
 
       if (result != null) {
-        _filePath = result.files.single.path; // Save the file path
+        _filePath = result.files.single.path;
         var bytes = File(_filePath!).readAsBytesSync();
         var excel = Excel.decodeBytes(bytes);
 
@@ -46,8 +46,9 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
 
           if (rows != null && rows.isNotEmpty) {
             excelData = rows
+                .skip(1)
                 .map((row) =>
-                row.map((cell) => cell?.value?.toString() ?? '').toList())
+                    row.map((cell) => cell?.value?.toString() ?? '').toList())
                 .toList();
             isExcelLoaded = true;
           } else {
@@ -67,44 +68,133 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
     setState(() {});
   }
 
-  void runSimulation() {
-    if (excelData.isEmpty || excelData.length <= 1) return;
+  // الدالة التي تقوم بإنشاء جدول التحليل
+  void generateServiceAnalysis() {
+    analysisData = [];
+    Map<String, List<int>> serviceDurations = {};
+    Map<String, int> serviceFrequency = {};
+    double cumulativeProbability = 0;
 
-    simulationData.clear();
-    int currentTime = 0;
-    Random random = Random();
+    for (var row in excelData) {
+      String service = row[2];
+      int duration = int.tryParse(row[3]) ?? 0;
 
-    for (int i = 1; i <= 5; i++) {
-      int interval = random.nextInt(3) + 1;
-      currentTime += interval;
-      int codeIndex = random.nextInt(excelData.length - 1) + 1;
-      var serviceRow = excelData[codeIndex];
-
-      int duration = int.tryParse(serviceRow[2]) ?? 0;
-      int start = max(currentTime,
-          simulationData.isNotEmpty ? int.parse(simulationData.last[7]) : 0);
-      int endClock = start + duration;
-      int custWait = start - currentTime;
-
-      simulationData.add([
-        i.toString(),
-        interval.toString(),
-        currentTime.toString(),
-        serviceRow[0],
-        serviceRow[1],
-        start.toString(),
-        duration.toString(),
-        endClock.toString(),
-        i == 1 ? 'Wait' : 'Busy',
-        custWait.toString(),
-      ]);
+      serviceDurations.putIfAbsent(service, () => []).add(duration);
+      serviceFrequency[service] = (serviceFrequency[service] ?? 0) + 1;
     }
+
+    int totalServices = serviceFrequency.values.fold(0, (a, b) => a + b);
+    int previousTo = 0;
+    int custIdCounter = 1;
+
+    serviceDurations.forEach((service, durations) {
+      double averageDuration =
+          durations.reduce((a, b) => a + b) / durations.length;
+      double probability = serviceFrequency[service]! / totalServices;
+      cumulativeProbability += probability;
+
+      int to = (cumulativeProbability * 100).round();
+      int from = analysisData.isEmpty ? 1 : previousTo + 1;
+
+      analysisData.add([
+        custIdCounter.toString(),
+        service,
+        averageDuration.toStringAsFixed(2),
+        probability.toStringAsFixed(2),
+        cumulativeProbability.toStringAsFixed(2),
+        from.toString(),
+        to.toString(),
+      ]);
+
+      previousTo = to;
+      custIdCounter++;
+    });
+
+    setState(() {});
+  }
+
+  void generateNewSimulationTable() {
+    newSimulationData = [];
+
+    // الحصول على أقل وأكبر قيمة من عمود interval في الجدول المعطى
+    List<int> intervals =
+        excelData.map((row) => int.tryParse(row[1]) ?? 0).toList();
+    int minInterval = intervals.reduce(min);
+    int maxInterval = intervals.reduce(max);
+
+    int previousArrivalClock = 0;
+    double previousEnd = 0.0;
+
+    for (int i = 0; i < 10; i++) {
+      int custId = i + 1;
+
+      // حساب interArrival كرقم عشوائي بين minInterval و maxInterval
+      int interArrival =
+          minInterval + Random().nextInt(maxInterval - minInterval + 1);
+
+      // حساب arrivalClock كقيمة int
+      int arrivalClock =
+          i == 0 ? interArrival : interArrival + previousArrivalClock;
+
+      // توليد الكود بشكل عشوائي ضمن حدود 'From' و 'To' في analysisData
+      int minCode = int.parse(analysisData.first[5]);
+      int maxCode = int.parse(analysisData.last[6]);
+      int code = minCode + Random().nextInt(maxCode - minCode + 1);
+
+      // البحث عن الخدمة المناسبة في analysisData بناءً على الكود
+      String service = '';
+      double avgDuration = 0;
+      for (var row in analysisData) {
+        int from = int.parse(row[5]);
+        int to = int.parse(row[6]);
+        if (code >= from && code <= to) {
+          service = row[1];
+          avgDuration = double.parse(row[2]);
+          break;
+        }
+      }
+
+      // حساب start و end كقيم double
+      double start = i == 0 ? arrivalClock.toDouble() : previousEnd;
+      double end = start + avgDuration;
+
+      // حساب حالة العميل (state)
+      String state;
+      if (i == 0) {
+        // للصف الأول، يتم تحديد الحالة بناءً على interArrival
+        state = interArrival > 0 ? "wait" : "busy";
+      } else {
+        // لبقية الصفوف، يتم تطبيق الشرط المعطى
+        state = (start - previousEnd) > 0 ? "wait" : "busy";
+      }
+
+      // حساب وقت الانتظار customerWait وضبطه ليكون صفرًا في حالة كان أقل من الصفر
+      double customerWait = start - arrivalClock;
+      if (customerWait < 0) customerWait = 0;
+
+      // إضافة الصف إلى newSimulationData مع التحويل إلى نص لتنسيق العرض
+      newSimulationData.add([
+        custId.toString(),
+        interArrival.toString(),
+        arrivalClock.toString(),
+        code.toString(),
+        service,
+        start.toStringAsFixed(1),
+        avgDuration.toStringAsFixed(1),
+        end.toStringAsFixed(1),
+        state,
+        customerWait.toStringAsFixed(1)
+      ]);
+
+      // تحديث القيم السابقة للصف التالي
+      previousArrivalClock = arrivalClock;
+      previousEnd = end;
+    }
+
     setState(() {});
   }
 
   Widget buildTable(List<List<String>> data, List<String> headers) {
-    int columnCount = headers.length;
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SingleChildScrollView(
@@ -119,9 +209,6 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
                   .toList(),
             ),
             ...data.map((row) {
-              while (row.length < columnCount) {
-                row.add(''); // Fill missing cells with empty strings
-              }
               return TableRow(
                 children: row.map((cell) => _buildCell(cell)).toList(),
               );
@@ -152,140 +239,97 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
       appBar: AppBar(title: const Text('Probability Simulation')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: pickAndReadExcelFile,
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.blue,
-                    shadowColor: Colors.black,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(5)),
-                    ),
-                  ),
-                  child: const Text('Choose Excel File'),
-                ),
-                const SizedBox(width: 15),
-                ElevatedButton(
-                  onPressed: runSimulation,
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.green,
-                    shadowColor: Colors.black,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(5)),
-                    ),
-                  ),
-                  child: const Text('Run Simulation'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 25),
-            if (isExcelLoaded)
-              Expanded(
-                  child:
-                  buildTable(excelData, ['code', 'Service', 'Duration'])),
-            if (simulationData.isNotEmpty)
-              Expanded(
-                child: buildTable(
-                  simulationData,
-                  [
-                    'Cust_id',
-                    'Interval',
-                    'Arr.Clock',
-                    'code',
-                    'Service',
-                    'Start',
-                    'Duration',
-                    'EndClock',
-                    'Serv.State',
-                    'Cust Wait'
-                  ],
-                ),
-              ),
-            if (simulationData.isNotEmpty)
-              Stack(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () async {
-                          setState(() {
-                            isExporting = true; // Start loading indicator
-                          });
-
-                          await service.createExcelTables();
-
-                          setState(() {
-                            isExporting = false; // Stop loading indicator
-                            isExcelGenerated = true;
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.teal,
-                          shadowColor: Colors.black,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(5)),
-                          ),
-                        ),
-                        child: const Text(
-                          'Export to Excel',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 15),
-                      ElevatedButton(
-                        onPressed: isExcelGenerated
-                            ? () async {
-                          await service.openSavedFile();
-                        }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.red,
-                          shadowColor: Colors.black,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(5)),
-                          ),
-                        ),
-                        child: const Text('Open Excel File'),
-                      ),
-                    ],
-                  ),
-                  if (isExporting)
-                    Positioned.fill(
-                      child: Align(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              height: 4.0,
-                              margin:
-                              const EdgeInsets.symmetric(horizontal: 100),
-                              child: LinearProgressIndicator(
-                                backgroundColor: Colors.grey[300],
-                                color: Colors.blueAccent,
-                                minHeight: 6,
-                              ),
-                            ),
-                            const Text(
-                              "Exporting...",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
+                  ElevatedButton(
+                    onPressed: pickAndReadExcelFile,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blue,
+                      shadowColor: Colors.black,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(5)),
                       ),
                     ),
+                    child: const Text('Choose Excel File'),
+                  ),
+                  const SizedBox(width: 15),
+                  ElevatedButton(
+                    onPressed: () {
+                      generateServiceAnalysis();
+                      generateNewSimulationTable();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.green,
+                      shadowColor: Colors.black,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(5)),
+                      ),
+                    ),
+                    child: const Text('Run Simulation'),
+                  ),
                 ],
               ),
-          ],
+              const SizedBox(height: 25),
+              if (isExcelLoaded)
+                buildTable(
+                    excelData, ['Cust_id', 'Interval', 'Service', 'Duration']),
+              const SizedBox(height: 20),
+              if (analysisData.isNotEmpty)
+                Column(
+                  children: [
+                    const Text(
+                      'Analysis Data Table',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    buildTable(
+                      analysisData,
+                      [
+                        'Cust_id',
+                        'Service Type',
+                        'Avg Duration',
+                        'Probability',
+                        'Cumulative Prob',
+                        'From',
+                        'To'
+                      ],
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 20),
+              if (newSimulationData.isNotEmpty)
+                Column(
+                  children: [
+                    const Text(
+                      'New Simulation Data Table',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    buildTable(
+                      newSimulationData,
+                      [
+                        'Cust_id',
+                        'Interval',
+                        'ArrivalClock',
+                        'Code',
+                        'Service',
+                        'Start',
+                        'Duration',
+                        'End_Clock',
+                        'State',
+                        'Customer Wait'
+                      ],
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );

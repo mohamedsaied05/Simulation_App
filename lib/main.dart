@@ -95,7 +95,11 @@ class WelcomeScreen extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                                 builder: (context) =>
+<<<<<<< HEAD
                                     const ProbabilitySimulationScreen()));
+=======
+                                    const ExcelSimulationScreen_2()));
+>>>>>>> 8d90c03 (Initial commit)
                       },
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
