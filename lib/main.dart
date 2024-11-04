@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:simulation_app/probability_simulation_screen.dart';
 import 'package:simulation_app/static_simulation_screen.dart';
 
 void main() {
@@ -65,7 +66,7 @@ class WelcomeScreen extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                               builder: (context) =>
-                                  const ExcelSimulationScreen()),
+                              const ExcelSimulationScreen()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -89,9 +90,15 @@ class WelcomeScreen extends StatelessWidget {
                   SizedBox(
                     width: 300,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Add your navigation or functionality here
-                      },
+                  onPressed: () {
+                    Navigator.push(
+                       context,
+                      MaterialPageRoute(
+                       builder: (context) =>
+                       const ExcelSimulationScreen_2())
+                      );
+                       },
+
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: Colors.teal[700],
