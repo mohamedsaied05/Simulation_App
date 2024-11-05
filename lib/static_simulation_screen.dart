@@ -3,7 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart';
 import 'dart:io';
 import 'dart:math';
-import 'package:simulation_app/excel_service.dart';
+import 'package:simulation_app/excel_static_service.dart';
 
 class ExcelSimulationScreen extends StatefulWidget {
   const ExcelSimulationScreen({super.key});

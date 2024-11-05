@@ -49,7 +49,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 40),
                   const Text(
-                    'choose Simulation Type:',
+                    'Choose Simulation Type:',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -92,14 +92,11 @@ class WelcomeScreen extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-<<<<<<< HEAD
-                                    const ProbabilitySimulationScreen()));
-=======
-                                    const ExcelSimulationScreen_2()));
->>>>>>> 8d90c03 (Initial commit)
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const ProbabilitySimulationScreen()),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,

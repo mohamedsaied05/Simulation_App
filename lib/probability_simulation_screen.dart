@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart';
+import 'package:simulation_app/excel_prob_service.dart';
 import 'dart:io';
 import 'dart:math';
-import 'package:simulation_app/excel_service.dart';
 
 class ProbabilitySimulationScreen extends StatefulWidget {
   const ProbabilitySimulationScreen({super.key});
@@ -20,12 +20,12 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
   bool isExcelGenerated = false;
   bool isExporting = false;
   String? _filePath = '';
-  late ExcelService service;
+  late ExcelProbService service;
 
   @override
   void initState() {
     super.initState();
-    service = ExcelService(_filePath, newSimulationData);
+    service = ExcelProbService(analysisData, newSimulationData);
   }
 
   Future<void> pickAndReadExcelFile() async {
@@ -194,6 +194,15 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
     setState(() {});
   }
 
+  Future<void> saveExcelProbTables() async {
+    // Initialize the service with the latest data right before saving
+    final service = ExcelProbService(
+        analysisData, // Use updated analysisData
+        newSimulationData // Use updated newSimulationData
+        );
+    await service.saveExcelProbTables();
+  }
+
   Widget buildTable(List<List<String>> data, List<String> headers) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -292,10 +301,10 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
                       analysisData,
                       [
                         'Cust_id',
-                        'Service Type',
-                        'Avg Duration',
-                        'Probability',
-                        'Cumulative Prob',
+                        'ServType',
+                        'Avg.Dur',
+                        'Prob',
+                        'Cum.Prob',
                         'From',
                         'To'
                       ],
@@ -307,7 +316,7 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
                 Column(
                   children: [
                     const Text(
-                      'New Simulation Data Table',
+                      'Simulation Data Table',
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
@@ -316,16 +325,97 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
                       [
                         'Cust_id',
                         'Interval',
-                        'ArrivalClock',
+                        'Arr.Clock',
                         'Code',
                         'Service',
                         'Start',
                         'Duration',
-                        'End_Clock',
+                        'End.Clock',
                         'State',
-                        'Customer Wait'
+                        'Cust.Wait'
                       ],
                     ),
+                  ],
+                ),
+              const SizedBox(height: 20),
+              if (newSimulationData.isNotEmpty)
+                Stack(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            setState(() {
+                              isExporting = true; // Start loading indicator
+                            });
+
+                            await saveExcelProbTables();
+
+                            setState(() {
+                              isExporting = false; // Stop loading indicator
+                              isExcelGenerated = true;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.teal,
+                            shadowColor: Colors.black,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(5)),
+                            ),
+                          ),
+                          child: const Text(
+                            'Export to Excel',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        ElevatedButton(
+                          onPressed: isExcelGenerated
+                              ? () async {
+                                  await service.openSavedFile();
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.red,
+                            shadowColor: Colors.black,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(5)),
+                            ),
+                          ),
+                          child: const Text('Open Excel File'),
+                        ),
+                      ],
+                    ),
+                    if (isExporting)
+                      Positioned.fill(
+                        child: Align(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: double.infinity,
+                                height: 4.0,
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 100),
+                                child: LinearProgressIndicator(
+                                  backgroundColor: Colors.grey[300],
+                                  color: Colors.blueAccent,
+                                  minHeight: 6,
+                                ),
+                              ),
+                              const Text(
+                                "Exporting...",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
             ],
