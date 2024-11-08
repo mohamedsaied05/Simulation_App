@@ -20,12 +20,15 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
   bool isExcelGenerated = false;
   bool isExporting = false;
   String? _filePath = '';
+  int customerNum = 1;
+  bool isDarkMode = false; // Track the current theme mode
   late ExcelProbService service;
+  final TextEditingController _custNumController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    service = ExcelProbService(analysisData, newSimulationData);
+    service = ExcelProbService(excelData, analysisData, newSimulationData);
   }
 
   Future<void> pickAndReadExcelFile() async {
@@ -115,6 +118,7 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
 
   void generateNewSimulationTable() {
     newSimulationData = [];
+    customerNum = int.tryParse(_custNumController.text) ?? 1;
 
     // الحصول على أقل وأكبر قيمة من عمود interval في الجدول المعطى
     List<int> intervals =
@@ -125,7 +129,7 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
     int previousArrivalClock = 0;
     double previousEnd = 0.0;
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < customerNum; i++) {
       int custId = i + 1;
 
       // حساب interArrival كرقم عشوائي بين minInterval و maxInterval
@@ -197,6 +201,7 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
   Future<void> saveExcelProbTables() async {
     // Initialize the service with the latest data right before saving
     final service = ExcelProbService(
+        excelData, // Use updated excelData
         analysisData, // Use updated analysisData
         newSimulationData // Use updated newSimulationData
         );
@@ -231,194 +236,231 @@ class _ExcelSimulationScreenState extends State<ProbabilitySimulationScreen> {
   Widget _buildCell(String content, {bool isHeader = false}) {
     return Container(
       padding: const EdgeInsets.all(8.0),
-      color: isHeader ? Colors.yellow : Colors.white,
+      color: isHeader
+          ? Colors.yellow
+          : (isDarkMode ? Colors.grey[850] : Theme.of(context).cardColor),
       child: Text(
         content,
         textAlign: TextAlign.center,
         style: TextStyle(
-            fontSize: 16,
-            fontWeight: isHeader ? FontWeight.bold : FontWeight.normal),
+          fontSize: 16,
+          fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+          color: isHeader
+              ? Colors.black
+              : (isDarkMode ? Colors.white : null), // Adjust text color
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Probability Simulation')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: pickAndReadExcelFile,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.blue,
-                      shadowColor: Colors.black,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(5)),
-                      ),
-                    ),
-                    child: const Text('Choose Excel File'),
-                  ),
-                  const SizedBox(width: 15),
-                  ElevatedButton(
-                    onPressed: () {
-                      generateServiceAnalysis();
-                      generateNewSimulationTable();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.green,
-                      shadowColor: Colors.black,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(5)),
-                      ),
-                    ),
-                    child: const Text('Run Simulation'),
-                  ),
-                ],
+    return MaterialApp(
+      theme: isDarkMode
+          ? ThemeData.dark()
+          : ThemeData.light(), // Set the theme based on the toggle
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Probability Simulation'),
+          actions: [
+            IconButton(
+              icon: Icon(
+                isDarkMode ? Icons.light_mode : Icons.dark_mode,
               ),
-              const SizedBox(height: 25),
-              if (isExcelLoaded)
-                buildTable(
-                    excelData, ['Cust_id', 'Interval', 'Service', 'Duration']),
-              const SizedBox(height: 20),
-              if (analysisData.isNotEmpty)
-                Column(
-                  children: [
-                    const Text(
-                      'Analysis Data Table',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    buildTable(
-                      analysisData,
-                      [
-                        'Cust_id',
-                        'ServType',
-                        'Avg.Dur',
-                        'Prob',
-                        'Cum.Prob',
-                        'From',
-                        'To'
-                      ],
-                    ),
-                  ],
+              onPressed: () {
+                setState(() {
+                  isDarkMode = !isDarkMode; // Toggle the theme mode
+                });
+              },
+            ),
+          ],
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _custNumController,
+                  decoration: InputDecoration(
+                    labelText: 'Enter Customer Number',
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
-              const SizedBox(height: 20),
-              if (newSimulationData.isNotEmpty)
-                Column(
+                const SizedBox(height: 15),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Simulation Data Table',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    buildTable(
-                      newSimulationData,
-                      [
-                        'Cust_id',
-                        'Interval',
-                        'Arr.Clock',
-                        'Code',
-                        'Service',
-                        'Start',
-                        'Duration',
-                        'End.Clock',
-                        'State',
-                        'Cust.Wait'
-                      ],
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 20),
-              if (newSimulationData.isNotEmpty)
-                Stack(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () async {
-                            setState(() {
-                              isExporting = true; // Start loading indicator
-                            });
-
-                            await saveExcelProbTables();
-
-                            setState(() {
-                              isExporting = false; // Stop loading indicator
-                              isExcelGenerated = true;
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Colors.teal,
-                            shadowColor: Colors.black,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(5)),
-                            ),
-                          ),
-                          child: const Text(
-                            'Export to Excel',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        ElevatedButton(
-                          onPressed: isExcelGenerated
-                              ? () async {
-                                  await service.openSavedFile();
-                                }
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Colors.red,
-                            shadowColor: Colors.black,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(5)),
-                            ),
-                          ),
-                          child: const Text('Open Excel File'),
-                        ),
-                      ],
-                    ),
-                    if (isExporting)
-                      Positioned.fill(
-                        child: Align(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: double.infinity,
-                                height: 4.0,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 100),
-                                child: LinearProgressIndicator(
-                                  backgroundColor: Colors.grey[300],
-                                  color: Colors.blueAccent,
-                                  minHeight: 6,
-                                ),
-                              ),
-                              const Text(
-                                "Exporting...",
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
+                    ElevatedButton(
+                      onPressed: pickAndReadExcelFile,
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.blue,
+                        shadowColor: Colors.black,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(5)),
                         ),
                       ),
+                      child: const Text('Choose Excel File'),
+                    ),
+                    const SizedBox(width: 15),
+                    ElevatedButton(
+                      onPressed: () {
+                        generateServiceAnalysis();
+                        generateNewSimulationTable();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.green,
+                        shadowColor: Colors.black,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(5)),
+                        ),
+                      ),
+                      child: const Text('Run Simulation'),
+                    ),
                   ],
                 ),
-            ],
+                const SizedBox(height: 25),
+                if (isExcelLoaded)
+                  buildTable(excelData,
+                      ['Cust_id', 'Interval', 'Service', 'Duration']),
+                const SizedBox(height: 20),
+                if (analysisData.isNotEmpty)
+                  Column(
+                    children: [
+                      const Text(
+                        'Analysis Data Table',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      buildTable(
+                        analysisData,
+                        [
+                          'Cust_id',
+                          'ServType',
+                          'Avg.Dur',
+                          'Prob',
+                          'Cum.Prob',
+                          'From',
+                          'To'
+                        ],
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 20),
+                if (newSimulationData.isNotEmpty)
+                  Column(
+                    children: [
+                      const Text(
+                        'Simulation Data Table',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      buildTable(
+                        newSimulationData,
+                        [
+                          'Cust_id',
+                          'Interval',
+                          'Arr.Clock',
+                          'Code',
+                          'Service',
+                          'Start',
+                          'Duration',
+                          'End.Clock',
+                          'State',
+                          'Cust.Wait'
+                        ],
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 20),
+                if (newSimulationData.isNotEmpty)
+                  Stack(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              setState(() {
+                                isExporting = true; // Start loading indicator
+                              });
+
+                              await saveExcelProbTables();
+
+                              setState(() {
+                                isExporting = false; // Stop loading indicator
+                                isExcelGenerated = true;
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.teal,
+                              shadowColor: Colors.black,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(5)),
+                              ),
+                            ),
+                            child: const Text(
+                              'Export to Excel',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          ElevatedButton(
+                            onPressed: isExcelGenerated
+                                ? () async {
+                                    await service.openSavedFile();
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.red,
+                              shadowColor: Colors.black,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(5)),
+                              ),
+                            ),
+                            child: const Text('Open Excel File'),
+                          ),
+                        ],
+                      ),
+                      if (isExporting)
+                        Positioned.fill(
+                          child: Align(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  height: 4.0,
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 100),
+                                  child: LinearProgressIndicator(
+                                    backgroundColor: Colors.grey[300],
+                                    color: Colors.blueAccent,
+                                    minHeight: 6,
+                                  ),
+                                ),
+                                const Text(
+                                  "Exporting...",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+              ],
+            ),
           ),
         ),
       ),

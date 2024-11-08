@@ -19,6 +19,8 @@ class MyApp extends StatelessWidget {
 }
 
 class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
