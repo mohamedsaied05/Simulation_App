@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:simulation_app/probability_simulation_screen.dart';
-import 'package:simulation_app/static_simulation_screen.dart';
+import 'package:simulation_app/screens/parallel_server_simulation_screen.dart';
+import 'package:simulation_app/screens/probability_simulation_screen.dart';
+import 'package:simulation_app/screens/static_simulation_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,7 +12,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: WelcomeScreen(),
     );
@@ -27,7 +28,7 @@ class WelcomeScreen extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.tealAccent, Colors.white],
+            colors: [Colors.tealAccent, Colors.blueGrey],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -43,84 +44,138 @@ class WelcomeScreen extends StatelessWidget {
                   const Text(
                     'Welcome to our Simulation App!',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blueGrey,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 5.0,
+                          color: Colors.black54,
+                          offset: Offset(2.0, 2.0),
+                        ),
+                      ],
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30),
                   const Text(
                     'Choose Simulation Type:',
                     style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blueGrey,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 5.0,
+                          color: Colors.black54,
+                          offset: Offset(2.0, 2.0),
+                        ),
+                      ],
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: 300,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const ExcelSimulationScreen()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.teal,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 15,
-                          horizontal: 30,
+                  const SizedBox(height: 30),
+                  // First Button with Icon and Animation
+                  AnimatedButton(
+                    label: 'Static',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ExcelSimulationScreen(),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text(
-                        'Static Simulation',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
+                      );
+                    },
+                    color: Colors.teal,
+                    icon: Icons.scatter_plot,
                   ),
-                  const SizedBox(height: 20), // Space between buttons
-                  SizedBox(
-                    width: 300,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const ProbabilitySimulationScreen()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.teal[700],
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 15,
-                          horizontal: 30,
+                  const SizedBox(height: 20),
+                  // Second Button with Icon and Animation
+                  AnimatedButton(
+                    label: 'Probability',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const ProbabilitySimulationScreen(),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                      );
+                    },
+                    color: Colors.teal[700]!,
+                    icon: Icons.calculate,
+                  ),
+                  const SizedBox(height: 20),
+                  // Third Button with Icon and Animation
+                  AnimatedButton(
+                    label: 'Parallel Server',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const ParallelServerSimulationScreen(),
                         ),
-                      ),
-                      child: const Text(
-                        'Probability Simulation',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
+                      );
+                    },
+                    color: Colors.teal[900]!,
+                    icon: Icons.align_horizontal_left_outlined,
                   ),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// Custom Animated Button with Icon
+class AnimatedButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+  final Color color;
+  final IconData icon;
+
+  const AnimatedButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onPressed,
+      splashColor: color.withOpacity(0.5),
+      borderRadius: BorderRadius.circular(30),
+      child: Container(
+        width: 300,
+        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.6),
+              blurRadius: 5,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 18, color: Colors.white),
+            ),
+          ],
         ),
       ),
     );

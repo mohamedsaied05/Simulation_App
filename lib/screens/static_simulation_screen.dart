@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:math';
-import 'package:simulation_app/excel_static_service.dart';
+import 'package:simulation_app/services/excel_static_service.dart';
 
 class ExcelSimulationScreen extends StatefulWidget {
   const ExcelSimulationScreen({super.key});
@@ -22,7 +23,7 @@ class _ExcelSimulationScreenState extends State<ExcelSimulationScreen> {
   String? _filePath = '';
   late ExcelService service;
   int customerNum = 1;
-  bool isDarkMode = false; // Track the current theme mode
+  static bool isDarkMode = false; // Track the current theme mode
 
   final TextEditingController _custNumController = TextEditingController();
 
@@ -30,6 +31,19 @@ class _ExcelSimulationScreenState extends State<ExcelSimulationScreen> {
   void initState() {
     super.initState();
     service = ExcelService(_filePath, excelData, simulationData);
+    _loadDarkModePreference(); // Load the saved theme mode
+  }
+
+  Future<void> _loadDarkModePreference() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    });
+  }
+
+  Future<void> _saveDarkModePreference(bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', value);
   }
 
   Future<void> pickAndReadExcelFile() async {
@@ -182,6 +196,7 @@ class _ExcelSimulationScreenState extends State<ExcelSimulationScreen> {
               onPressed: () {
                 setState(() {
                   isDarkMode = !isDarkMode; // Toggle the theme mode
+                  _saveDarkModePreference(isDarkMode);
                 });
               },
             ),
