@@ -118,8 +118,16 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    color: Colors.teal[900]!,
+                    color: Colors.teal[800]!,
                     icon: Icons.align_horizontal_left_outlined,
+                  ),
+                  const SizedBox(height: 20),
+                  // Fourth Button with Icon and Animation
+                  AnimatedButton(
+                    label: 'New Simulation',
+                    onPressed: () {},
+                    color: Colors.teal[900]!,
+                    icon: Icons.newspaper,
                   ),
                 ],
               ),
