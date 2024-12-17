@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:simulation_app/screens/Inventory.dart';
 import 'package:simulation_app/screens/parallel_server_simulation_screen.dart';
 import 'package:simulation_app/screens/probability_simulation_screen.dart';
 import 'package:simulation_app/screens/static_simulation_screen.dart';
@@ -28,109 +29,98 @@ class WelcomeScreen extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.tealAccent, Colors.blueGrey],
+            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Container(
-              margin: const EdgeInsets.only(top: 100),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  const Text(
-                    'Welcome to our Simulation App!',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 5.0,
-                          color: Colors.black54,
-                          offset: Offset(2.0, 2.0),
-                        ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Simulation App',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.5,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 6.0,
+                        color: Colors.black54,
+                        offset: Offset(2.0, 2.0),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 30),
-                  const Text(
-                    'Choose Simulation Type:',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 5.0,
-                          color: Colors.black54,
-                          offset: Offset(2.0, 2.0),
-                        ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Choose Your Simulation Type',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white70,
+                    letterSpacing: 1.2,
                   ),
-                  const SizedBox(height: 30),
-                  // First Button with Icon and Animation
-                  AnimatedButton(
-                    label: 'Static',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ExcelSimulationScreen(),
-                        ),
-                      );
-                    },
-                    color: Colors.teal,
-                    icon: Icons.scatter_plot,
-                  ),
-                  const SizedBox(height: 20),
-                  // Second Button with Icon and Animation
-                  AnimatedButton(
-                    label: 'Probability',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const ProbabilitySimulationScreen(),
-                        ),
-                      );
-                    },
-                    color: Colors.teal[700]!,
-                    icon: Icons.calculate,
-                  ),
-                  const SizedBox(height: 20),
-                  // Third Button with Icon and Animation
-                  AnimatedButton(
-                    label: 'Parallel Server',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const ParallelServerSimulationScreen(),
-                        ),
-                      );
-                    },
-                    color: Colors.teal[800]!,
-                    icon: Icons.align_horizontal_left_outlined,
-                  ),
-                  const SizedBox(height: 20),
-                  // Fourth Button with Icon and Animation
-                  AnimatedButton(
-                    label: 'New Simulation',
-                    onPressed: () {},
-                    color: Colors.teal[900]!,
-                    icon: Icons.newspaper,
-                  ),
-                ],
-              ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+                SimulationCard(
+                  label: 'Static Simulation',
+                  icon: Icons.bar_chart,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ExcelSimulationScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                SimulationCard(
+                  label: 'Probability Simulation',
+                  icon: Icons.timeline,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const ProbabilitySimulationScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                SimulationCard(
+                  label: 'Parallel Server Simulation',
+                  icon: Icons.dns_rounded,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const ParallelServerSimulationScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                SimulationCard(
+                  label: 'Inventory Simulation',
+                  icon: Icons.inventory_2,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SimulationScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -139,49 +129,67 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
-// Custom Animated Button with Icon
-class AnimatedButton extends StatelessWidget {
+class SimulationCard extends StatelessWidget {
   final String label;
-  final VoidCallback onPressed;
-  final Color color;
   final IconData icon;
+  final VoidCallback onPressed;
 
-  const AnimatedButton({
+  const SimulationCard({
     super.key,
     required this.label,
-    required this.onPressed,
-    required this.color,
     required this.icon,
+    required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onPressed,
-      splashColor: color.withOpacity(0.5),
-      borderRadius: BorderRadius.circular(30),
       child: Container(
-        width: 300,
-        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+        width: MediaQuery.of(context).size.width * 0.9,
+        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(30),
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.6),
-              blurRadius: 5,
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8,
               offset: const Offset(0, 4),
             ),
           ],
+          border: Border.all(color: Colors.white24, width: 1),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 24),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 18, color: Colors.white),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white70,
+              size: 18,
             ),
           ],
         ),
